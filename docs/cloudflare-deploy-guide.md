@@ -73,11 +73,38 @@ npx wrangler deploy
 
 ## 3. 環境変数の設定
 
-Cloudflare Pagesダッシュボードで以下の環境変数を設定する必要があります：
+Cloudflare Pagesで環境変数を設定する方法は複数あります：
 
-- `NEXT_PUBLIC_SUPABASE_URL`: SupabaseプロジェクトのURL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabaseの匿名キー
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabaseのサービスロールキー（必要に応じて）
+### 方法1: wrangler.tomlでの設定
+
+`wrangler.toml`ファイルに環境変数を直接設定できます：
+
+```toml
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "あなたのSupabase URL"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "あなたのSupabase匿名キー"
+```
+
+### 方法2: Cloudflareダッシュボードでの設定
+
+Cloudflare Pagesダッシュボードの「Settings」→「Environment variables」から設定できます。
+
+### 方法3: デプロイ時のコマンドラインでの設定
+
+```bash
+npx wrangler deploy --var NEXT_PUBLIC_SUPABASE_URL="あなたのSupabase URL" --var NEXT_PUBLIC_SUPABASE_ANON_KEY="あなたのSupabase匿名キー"
+```
+
+### フォールバック値の設定
+
+アプリケーションコード内で環境変数が設定されていない場合のフォールバック値を提供することも重要です：
+
+```javascript
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'デフォルトのURL';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'デフォルトのキー';
+```
+
+これにより、環境変数が設定されていない環境でもアプリケーションが動作するようになります。
 
 ## 4. 注意点
 
