@@ -10,7 +10,8 @@
 ```toml
 name = "ai-cafe"
 main = "pages/index.js"
-compatibility_date = "2023-12-01"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npm run build"
@@ -43,6 +44,16 @@ const nextConfig = {
     unoptimized: true,
   },
   output: 'export',
+  exportPathMap: async function (defaultPathMap) {
+    // APIルートを除外した新しいpathMapを作成
+    const pathMap = {};
+    for (const [path, config] of Object.entries(defaultPathMap)) {
+      if (!path.startsWith('/api/')) {
+        pathMap[path] = config;
+      }
+    }
+    return pathMap;
+  },
 }
 
 module.exports = nextConfig
@@ -116,12 +127,37 @@ Cloudflare Workersは標準ではNode.jsの組み込みモジュール（fs, pat
 
 ```toml
 compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2024-09-23"
 ```
 
-これにより、Node.jsの組み込みモジュールを使用するコードが正常に動作するようになります。ただし、パフォーマンスやセキュリティに影響する可能性があるため、必要な場合のみ使用してください。
+2024年9月23日以降の`compatibility_date`を設定することで、Node.jsモジュールの解決方法が改善されます。また、念のため`nodejs_compat`フラグも併用することをお勧めします。
 
 ### APIルートの制限
 Cloudflare Pagesは静的サイトホスティングサービスであるため、Next.jsのAPIルート（`pages/api/*`）は直接サポートされていません。APIルートを使用する場合は、Cloudflare Workersを別途設定する必要があります。
+
+#### APIルートの除外
+
+静的エクスポート時にAPIルートを除外するには、`next.config.js`に以下の設定を追加します：
+
+```javascript
+// next.config.js
+module.exports = {
+  // 他の設定...
+  output: 'export',
+  exportPathMap: async function (defaultPathMap) {
+    // APIルートを除外した新しいpathMapを作成
+    const pathMap = {};
+    for (const [path, config] of Object.entries(defaultPathMap)) {
+      if (!path.startsWith('/api/')) {
+        pathMap[path] = config;
+      }
+    }
+    return pathMap;
+  },
+}
+```
+
+この設定により、ビルド時にAPIルートが除外され、静的ファイルのみがエクスポートされます。APIの機能が必要な場合は、Cloudflare Workersを使用して実装する必要があります。
 
 ### 画像最適化の制限
 Next.jsの画像最適化機能は静的エクスポートでは完全にはサポートされていないため、`next.config.js`で`unoptimized: true`を設定しています。
