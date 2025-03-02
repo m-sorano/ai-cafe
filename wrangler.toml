@@ -6,3 +6,7 @@ compatibility_date = "2023-12-01"
 command = "npm run build"
 [site]
 bucket = "./out"
+
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://vfyqhpgrsfupsahmyzuf.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmeXFocGdyc2Z1cHNhaG15enVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTk5NTIxMzksImV4cCI6MjAxNTUyODEzOX0.qEIwlZCKJMzQVZzP5uQQzJQJlGSNDjANV5E_q1lqQXY"
