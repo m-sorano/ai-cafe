@@ -1,0 +1,8 @@
+name = "ai-cafe"
+main = "pages/index.js"
+compatibility_date = "2023-12-01"
+
+[build]
+command = "npm run build"
+[site]
+bucket = "./out"
