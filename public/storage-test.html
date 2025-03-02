@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Storage Test</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    input[type="file"] {
+      margin: 10px 0;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .result {
+      margin-top: 20px;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Supabase Storage Test</h1>
+  
+  <div class="card">
+    <h2>設定</h2>
+    <div>
+      <label for="supabase-url">Supabase URL:</label>
+      <input type="text" id="supabase-url" style="width: 100%;" placeholder="https://xxxxxxxxxxxx.supabase.co">
+    </div>
+    <div>
+      <label for="supabase-key">Supabase Anon Key:</label>
+      <input type="text" id="supabase-key" style="width: 100%;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>バケット一覧</h2>
+    <button id="list-buckets">バケット一覧を取得</button>
+    <div id="buckets-result" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h2>バケット作成</h2>
+    <div>
+      <label for="bucket-name">バケット名:</label>
+      <input type="text" id="bucket-name" value="avatars">
+    </div>
+    <div>
+      <label>
+        <input type="checkbox" id="bucket-public" checked> 公開バケット
+      </label>
+    </div>
+    <button id="create-bucket">バケットを作成</button>
+    <div id="create-result" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h2>ファイルアップロード</h2>
+    <div>
+      <label for="upload-bucket">バケット名:</label>
+      <input type="text" id="upload-bucket" value="avatars">
+    </div>
+    <div>
+      <label for="upload-file">ファイル:</label>
+      <input type="file" id="upload-file">
+    </div>
+    <button id="upload-button">アップロード</button>
+    <div id="upload-result" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h2>ファイル一覧</h2>
+    <div>
+      <label for="list-bucket">バケット名:</label>
+      <input type="text" id="list-bucket" value="avatars">
+    </div>
+    <button id="list-files">ファイル一覧を取得</button>
+    <div id="files-result" class="result"></div>
+  </div>
+
+  <script>
+    // ローカルストレージから設定を読み込む
+    document.getElementById('supabase-url').value = localStorage.getItem('supabase-url') || '';
+    document.getElementById('supabase-key').value = localStorage.getItem('supabase-key') || '';
+
+    // Supabaseクライアントを取得
+    function getSupabaseClient() {
+      const url = document.getElementById('supabase-url').value;
+      const key = document.getElementById('supabase-key').value;
+      
+      // 設定をローカルストレージに保存
+      localStorage.setItem('supabase-url', url);
+      localStorage.setItem('supabase-key', key);
+      
+      if (!url || !key) {
+        alert('Supabase URLとAnon Keyを入力してください');
+        return null;
+      }
+      
+      return supabase.createClient(url, key);
+    }
+
+    // バケット一覧を取得
+    document.getElementById('list-buckets').addEventListener('click', async () => {
+      const client = getSupabaseClient();
+      if (!client) return;
+      
+      const resultElement = document.getElementById('buckets-result');
+      resultElement.innerHTML = 'Loading...';
+      
+      try {
+        const { data, error } = await client.storage.listBuckets();
+        
+        if (error) throw error;
+        
+        let html = '<h3 class="success">バケット一覧</h3>';
+        if (data.length === 0) {
+          html += '<p>バケットが見つかりませんでした</p>';
+        } else {
+          html += '<ul>';
+          data.forEach(bucket => {
+            html += `<li>${bucket.name} (public: ${bucket.public ? 'はい' : 'いいえ'})</li>`;
+          });
+          html += '</ul>';
+        }
+        
+        resultElement.innerHTML = html;
+      } catch (error) {
+        resultElement.innerHTML = `<h3 class="error">エラー</h3><pre>${JSON.stringify(error, null, 2)}</pre>`;
+      }
+    });
+
+    // バケットを作成
+    document.getElementById('create-bucket').addEventListener('click', async () => {
+      const client = getSupabaseClient();
+      if (!client) return;
+      
+      const bucketName = document.getElementById('bucket-name').value;
+      const isPublic = document.getElementById('bucket-public').checked;
+      const resultElement = document.getElementById('create-result');
+      
+      if (!bucketName) {
+        alert('バケット名を入力してください');
+        return;
+      }
+      
+      resultElement.innerHTML = 'Creating...';
+      
+      try {
+        const { data, error } = await client.storage.createBucket(bucketName, {
+          public: isPublic
+        });
+        
+        if (error) throw error;
+        
+        resultElement.innerHTML = `<h3 class="success">バケット「${bucketName}」を作成しました</h3>`;
+      } catch (error) {
+        resultElement.innerHTML = `<h3 class="error">エラー</h3><pre>${JSON.stringify(error, null, 2)}</pre>`;
+      }
+    });
+
+    // ファイルをアップロード
+    document.getElementById('upload-button').addEventListener('click', async () => {
+      const client = getSupabaseClient();
+      if (!client) return;
+      
+      const bucketName = document.getElementById('upload-bucket').value;
+      const fileInput = document.getElementById('upload-file');
+      const resultElement = document.getElementById('upload-result');
+      
+      if (!bucketName) {
+        alert('バケット名を入力してください');
+        return;
+      }
+      
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert('ファイルを選択してください');
+        return;
+      }
+      
+      const file = fileInput.files[0];
+      const filePath = `test-${Date.now()}-${file.name}`;
+      
+      resultElement.innerHTML = 'Uploading...';
+      
+      try {
+        const { data, error } = await client.storage
+          .from(bucketName)
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (error) throw error;
+        
+        const { data: urlData } = client.storage
+          .from(bucketName)
+          .getPublicUrl(filePath);
+        
+        resultElement.innerHTML = `
+          <h3 class="success">アップロード成功</h3>
+          <p>ファイル: ${filePath}</p>
+          <p>URL: <a href="${urlData.publicUrl}" target="_blank">${urlData.publicUrl}</a></p>
+          <img src="${urlData.publicUrl}" style="max-width: 300px; max-height: 300px;" />
+        `;
+      } catch (error) {
+        resultElement.innerHTML = `<h3 class="error">エラー</h3><pre>${JSON.stringify(error, null, 2)}</pre>`;
+      }
+    });
+
+    // ファイル一覧を取得
+    document.getElementById('list-files').addEventListener('click', async () => {
+      const client = getSupabaseClient();
+      if (!client) return;
+      
+      const bucketName = document.getElementById('list-bucket').value;
+      const resultElement = document.getElementById('files-result');
+      
+      if (!bucketName) {
+        alert('バケット名を入力してください');
+        return;
+      }
+      
+      resultElement.innerHTML = 'Loading...';
+      
+      try {
+        const { data, error } = await client.storage
+          .from(bucketName)
+          .list();
+        
+        if (error) throw error;
+        
+        let html = `<h3 class="success">${bucketName}のファイル一覧</h3>`;
+        if (!data || data.length === 0) {
+          html += '<p>ファイルが見つかりませんでした</p>';
+        } else {
+          html += '<ul>';
+          data.forEach(item => {
+            if (item.name) {
+              const url = client.storage.from(bucketName).getPublicUrl(item.name).data.publicUrl;
+              html += `<li>${item.name} (${item.metadata?.size || 'unknown'} bytes) - <a href="${url}" target="_blank">表示</a></li>`;
+            }
+          });
+          html += '</ul>';
+        }
+        
+        resultElement.innerHTML = html;
+      } catch (error) {
+        resultElement.innerHTML = `<h3 class="error">エラー</h3><pre>${JSON.stringify(error, null, 2)}</pre>`;
+      }
+    });
+  </script>
+</body>
+</html>
