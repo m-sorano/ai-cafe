@@ -1,6 +1,7 @@
 name = "ai-cafe"
 main = "pages/index.js"
 compatibility_date = "2023-12-01"
+compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npm run build"

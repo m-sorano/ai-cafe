@@ -108,6 +108,18 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'デフォ�
 
 ## 4. 注意点
 
+### Node.js互換性フラグ
+
+Cloudflare Workersは標準ではNode.jsの組み込みモジュール（fs, path, util, stream, zlibなど）をサポートしていません。Next.jsアプリケーションをデプロイする場合、これらのモジュールが必要になることがあります。
+
+`wrangler.toml`ファイルに以下の設定を追加することで、Node.js互換モードを有効にできます：
+
+```toml
+compatibility_flags = ["nodejs_compat"]
+```
+
+これにより、Node.jsの組み込みモジュールを使用するコードが正常に動作するようになります。ただし、パフォーマンスやセキュリティに影響する可能性があるため、必要な場合のみ使用してください。
+
 ### APIルートの制限
 Cloudflare Pagesは静的サイトホスティングサービスであるため、Next.jsのAPIルート（`pages/api/*`）は直接サポートされていません。APIルートを使用する場合は、Cloudflare Workersを別途設定する必要があります。
 
